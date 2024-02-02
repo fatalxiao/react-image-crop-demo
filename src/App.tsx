@@ -74,7 +74,7 @@ const App = () => {
             height,
             unit: 'px'
         });
-    }, [imageType.recommendedHeight, imageType.recommendedWidth]);
+    }, [imageType]);
 
     useEffect(() => {
         init();
