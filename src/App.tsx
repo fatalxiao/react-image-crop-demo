@@ -1,8 +1,7 @@
-import {useState, useRef, useEffect, ChangeEvent} from 'react';
-import ReactCrop, {Crop} from 'react-image-crop';
-import useRawSize from './useRawSize.ts';
+import {useState, useRef, useEffect, ChangeEvent, useCallback} from 'react';
+import ReactCrop, {PixelCrop} from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import {useCallback} from 'react';
+import canvasPreview from './CanvasPreview';
 
 type ImageType = {
     id: string
@@ -46,22 +45,28 @@ const imgSrc =
 const App = () => {
 
     const imgRef = useRef<HTMLImageElement>(null);
+    const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    const [rawWidth, rawHeight] = useRawSize(imgSrc);
     const currentWidth = 500;
-    const ratio = currentWidth / rawWidth;
-    const currentHeight = rawHeight * ratio;
+
+    const [scale, setScale] = useState(1);
 
     const [imageType, setImageType] = useState<ImageType>(ImageTypes[0]);
-    const [crop, setCrop] = useState<Crop>();
+    const [crop, setCrop] = useState<PixelCrop>();
 
     const handleImageTypeChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
         setImageType(ImageTypes.find((i) => i.id === e.target.value) || ImageTypes[0]);
     }, []);
 
-    useEffect(() => {
-        const width = imageType.recommendedWidth * ratio;
-        const height = imageType.recommendedHeight * ratio;
+    const init = useCallback(() => {
+        const naturalWidth = imgRef.current?.naturalWidth || 0;
+        const naturalHeight = imgRef.current?.naturalHeight || 0;
+        const currentWidth = 500;
+        const scale = currentWidth / naturalWidth;
+        const currentHeight = naturalHeight * scale;
+        const width = imageType.recommendedWidth * scale;
+        const height = imageType.recommendedHeight * scale;
+        setScale(scale);
         setCrop({
             x: (currentWidth - width) / 2,
             y: (currentHeight - height) / 2,
@@ -69,14 +74,30 @@ const App = () => {
             height,
             unit: 'px'
         });
+    }, [imageType.recommendedHeight, imageType.recommendedWidth]);
+
+    useEffect(() => {
+        init();
     }, [
-        imageType, ratio, rawWidth, rawHeight, currentHeight
+        init
+    ]);
+
+    useEffect(() => {
+        if (crop?.width && crop?.height && imgRef.current && previewCanvasRef.current) {
+            canvasPreview(
+                imgRef.current,
+                previewCanvasRef.current,
+                crop
+            );
+        }
+    }, [
+        crop
     ]);
 
     return (
         <>
 
-            <div style={{marginBottom: 24}}>
+            <div style={{marginBottom: 8}}>
                 <select value={imageType.id}
                         onChange={handleImageTypeChange}>
                     {ImageTypes.map(imageType =>
@@ -89,14 +110,25 @@ const App = () => {
 
             <ReactCrop crop={crop}
                        aspect={imageType.aspect}
-                       minWidth={imageType.minWidth * ratio}
-                       minHeight={imageType.minHeight * ratio}
+                       minWidth={imageType.minWidth * scale}
+                       minHeight={imageType.minHeight * scale}
                        onChange={setCrop}>
                 <img ref={imgRef}
                      width={currentWidth}
                      alt="Crop me"
-                     src={imgSrc}/>
+                     src={imgSrc}
+                     onLoad={init}/>
             </ReactCrop>
+
+            {!!crop && (
+                <div>
+                    <canvas ref={previewCanvasRef}
+                            style={{
+                                width: crop.width / scale,
+                                height: crop.height / scale
+                            }}/>
+                </div>
+            )}
 
         </>
     );
