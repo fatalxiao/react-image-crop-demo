@@ -1,1 +1,0 @@
-# react-image-crop-demo
