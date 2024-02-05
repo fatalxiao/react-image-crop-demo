@@ -169,7 +169,7 @@ const App = () => {
                 </div>
             </div>
 
-            Actual size: {actualWidth}px * {actualHeight}px
+            Crop size: {actualWidth}px * {actualHeight}px
 
             {!!crop && (
                 <div>
