@@ -21,6 +21,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import type {ChangeEvent} from 'react';
 import type {PixelCrop} from 'react-image-crop';
 import type {ImageType} from './ImageType.ts';
+import {useMemo} from 'react';
 
 // Image sorce
 const imgSrc =
@@ -36,13 +37,26 @@ const App = () => {
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
     // scale state
-    const [scale, setScale] = useState(1);
+    const [scale, setScale] = useState<number>(1);
+
+    const [editorHeight, setEditorHeight] = useState<number>(0);
 
     // imageType state
     const [imageType, setImageType] = useState<ImageType>(ImageTypes[0]);
 
     // crop state
     const [crop, setCrop] = useState<PixelCrop>();
+
+    const actualWidth = useMemo(() => {
+        return ~~((crop?.width || 0) / scale);
+    }, [
+        crop?.width, scale
+    ]);
+    const actualHeight = useMemo(() => {
+        return ~~((crop?.height || 0) / scale);
+    }, [
+        crop?.height, scale
+    ]);
 
     /**
      * Handle imageType change
@@ -73,12 +87,14 @@ const App = () => {
         setScale(scale);
 
         // Calculate and init crop
-        const currentHeight = naturalHeight * scale;
+        const editorHeight = ~~(naturalHeight * scale);
+        setEditorHeight(editorHeight);
+
         const cropWidth = imageType.recommendedWidth * scale;
         const cropHeight = imageType.recommendedHeight * scale;
         setCrop({
             x: (editorWidth - cropWidth) / 2,
-            y: (currentHeight - cropHeight) / 2,
+            y: (editorHeight - cropHeight) / 2,
             width: cropWidth,
             height: cropHeight,
             unit: 'px'
@@ -88,7 +104,9 @@ const App = () => {
         imageType
     ]);
 
-    // Init when imageType changed
+    /**
+     * Init when imageType changed
+     */
     useEffect(() => {
         init();
     }, [
@@ -113,8 +131,13 @@ const App = () => {
     return (
         <>
 
-            <div style={{marginBottom: 8}}>
-                <select value={imageType.id}
+            <div style={{
+                marginBottom: 16
+            }}>
+                <select style={{
+                    height: 24
+                }}
+                        value={imageType.id}
                         onChange={handleImageTypeChange}>
                     {ImageTypes.map(imageType =>
                         <option value={imageType.id}>
@@ -122,26 +145,39 @@ const App = () => {
                         </option>
                     )}
                 </select>
+                <br/>
+                Recommended size: {imageType.recommendedWidth}px * {imageType.recommendedHeight}px
+                <br/>
+                Min size: {imageType.minWidth}px * {imageType.minHeight}px
             </div>
 
-            <ReactCrop crop={crop}
-                       aspect={imageType.aspect}
-                       minWidth={imageType.minWidth * scale}
-                       minHeight={imageType.minHeight * scale}
-                       onChange={setCrop}>
-                <img ref={imgRef}
-                     width={editorWidth}
-                     alt="Crop me"
-                     src={imgSrc}
-                     onLoad={init}/>
-            </ReactCrop>
+            <div style={{
+                marginBottom: 16
+            }}>
+                Editor size: {editorWidth}px * {editorHeight}px
+                <div>
+                    <ReactCrop crop={crop}
+                               aspect={imageType.aspect}
+                               minWidth={imageType.minWidth * scale}
+                               minHeight={imageType.minHeight * scale}
+                               onChange={setCrop}>
+                        <img ref={imgRef}
+                             width={editorWidth}
+                             alt="Crop me"
+                             src={imgSrc}
+                             onLoad={init}/>
+                    </ReactCrop>
+                </div>
+            </div>
+
+            Actual size: {actualWidth}px * {actualHeight}px
 
             {!!crop && (
                 <div>
                     <canvas ref={previewCanvasRef}
                             style={{
-                                width: crop.width / scale,
-                                height: crop.height / scale
+                                width: actualWidth,
+                                height: actualHeight
                             }}/>
                 </div>
             )}
