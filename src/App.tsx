@@ -3,7 +3,7 @@
  */
 
 // Hooks
-import {useState, useRef, useEffect, useCallback} from 'react';
+import {useState, useRef, useEffect, useCallback, useMemo} from 'react';
 
 // Components
 import ReactCrop from 'react-image-crop';
@@ -21,7 +21,6 @@ import 'react-image-crop/dist/ReactCrop.css';
 import type {ChangeEvent} from 'react';
 import type {PixelCrop} from 'react-image-crop';
 import type {ImageType} from './ImageType.ts';
-import {useMemo} from 'react';
 
 // Image sorce
 const imgSrc =
