@@ -1,4 +1,9 @@
-import {PixelCrop} from 'react-image-crop';
+/**
+ * @file CanvasPreview.ts
+ */
+
+// Types
+import type {PixelCrop} from 'react-image-crop';
 
 export default async function canvasPreview(
     image: HTMLImageElement,
@@ -6,8 +11,6 @@ export default async function canvasPreview(
     crop: PixelCrop,
     scale = 1
 ) {
-
-    console.log('crop::', crop);
 
     const ctx = canvas.getContext('2d');
 
@@ -59,4 +62,5 @@ export default async function canvasPreview(
     );
 
     ctx.restore();
+
 }

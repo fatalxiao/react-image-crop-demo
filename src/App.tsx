@@ -1,87 +1,96 @@
-import {useState, useRef, useEffect, ChangeEvent, useCallback} from 'react';
-import ReactCrop, {PixelCrop} from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+/**
+ * @file App.tsx
+ */
+
+// Hooks
+import {useState, useRef, useEffect, useCallback} from 'react';
+
+// Components
+import ReactCrop from 'react-image-crop';
+
+// Statics
+import ImageTypes from './ImageTypes';
+
+// Vendors
 import canvasPreview from './CanvasPreview';
 
-type ImageType = {
-    id: string
-    label: string
-    aspect: number
-    recommendedWidth: number
-    recommendedHeight: number
-    minWidth: number
-    minHeight: number
-}
+// Styles
+import 'react-image-crop/dist/ReactCrop.css';
 
-const ImageTypes: ImageType[] = [{
-    id: 'MARKETING_IMAGE',
-    label: 'Marketing Image',
-    aspect: 1.91,
-    recommendedWidth: 1200,
-    recommendedHeight: 628,
-    minWidth: 600,
-    minHeight: 314
-}, {
-    id: 'SQUARE_MARKETING_IMAGE',
-    label: 'Square Marketing Image',
-    aspect: 1,
-    recommendedWidth: 1200,
-    recommendedHeight: 1200,
-    minWidth: 300,
-    minHeight: 300
-}, {
-    id: 'LOGO',
-    label: 'Logo',
-    aspect: 1,
-    recommendedWidth: 1200,
-    recommendedHeight: 1200,
-    minWidth: 128,
-    minHeight: 128
-}];
+// Types
+import type {ChangeEvent} from 'react';
+import type {PixelCrop} from 'react-image-crop';
+import type {ImageType} from './ImageType.ts';
 
+// Image sorce
 const imgSrc =
     'https://www.intechnic.com/hubfs/Blog/Featured%20Images/Best%20Hotel%20Website%20Designs.jpg';
 
+// Editor width
+const editorWidth = 500;
+
 const App = () => {
 
+    // References
     const imgRef = useRef<HTMLImageElement>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    const currentWidth = 500;
-
+    // scale state
     const [scale, setScale] = useState(1);
 
+    // imageType state
     const [imageType, setImageType] = useState<ImageType>(ImageTypes[0]);
+
+    // crop state
     const [crop, setCrop] = useState<PixelCrop>();
 
+    /**
+     * Handle imageType change
+     */
     const handleImageTypeChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
         setImageType(ImageTypes.find((i) => i.id === e.target.value) || ImageTypes[0]);
     }, []);
 
-    const init = useCallback(() => {
-        const naturalWidth = imgRef.current?.naturalWidth || 0;
-        const naturalHeight = imgRef.current?.naturalHeight || 0;
-        const currentWidth = 500;
-        const scale = currentWidth / naturalWidth;
-        const currentHeight = naturalHeight * scale;
-        const width = imageType.recommendedWidth * scale;
-        const height = imageType.recommendedHeight * scale;
+    /**
+     * Handle the image load event and init scale and crop
+     */
+    const handleImageLoad = useCallback(() => {
+
+        if (!imgRef?.current) {
+            return;
+        }
+
+        // Get naturalWidth and naturalHeight of image
+        const naturalWidth = imgRef.current.naturalWidth || 0;
+        const naturalHeight = imgRef.current.naturalHeight || 0;
+
+        if (naturalWidth === 0 || naturalHeight === 0) {
+            return;
+        }
+
+        // Calculate and init scale
+        const scale = editorWidth / naturalWidth;
         setScale(scale);
+
+        // Calculate and init crop
+        const currentHeight = naturalHeight * scale;
+        const cropWidth = imageType.recommendedWidth * scale;
+        const cropHeight = imageType.recommendedHeight * scale;
         setCrop({
-            x: (currentWidth - width) / 2,
-            y: (currentHeight - height) / 2,
-            width,
-            height,
+            x: (editorWidth - cropWidth) / 2,
+            y: (currentHeight - cropHeight) / 2,
+            width: cropWidth,
+            height: cropHeight,
             unit: 'px'
         });
-    }, [imageType]);
 
-    useEffect(() => {
-        init();
     }, [
-        init
+        imageType
     ]);
 
+    /**
+     * Update preview when crop changed
+     */
     useEffect(() => {
         if (crop?.width && crop?.height && imgRef.current && previewCanvasRef.current) {
             canvasPreview(
@@ -114,10 +123,10 @@ const App = () => {
                        minHeight={imageType.minHeight * scale}
                        onChange={setCrop}>
                 <img ref={imgRef}
-                     width={currentWidth}
+                     width={editorWidth}
                      alt="Crop me"
                      src={imgSrc}
-                     onLoad={init}/>
+                     onLoad={handleImageLoad}/>
             </ReactCrop>
 
             {!!crop && (
