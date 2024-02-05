@@ -54,7 +54,7 @@ const App = () => {
     /**
      * Handle the image load event and init scale and crop
      */
-    const handleImageLoad = useCallback(() => {
+    const init = useCallback(() => {
 
         if (!imgRef?.current) {
             return;
@@ -86,6 +86,13 @@ const App = () => {
 
     }, [
         imageType
+    ]);
+
+    // Init when imageType changed
+    useEffect(() => {
+        init();
+    }, [
+        init
     ]);
 
     /**
@@ -126,7 +133,7 @@ const App = () => {
                      width={editorWidth}
                      alt="Crop me"
                      src={imgSrc}
-                     onLoad={handleImageLoad}/>
+                     onLoad={init}/>
             </ReactCrop>
 
             {!!crop && (
